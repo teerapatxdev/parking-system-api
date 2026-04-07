@@ -2,8 +2,9 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { EntityManager, Not, Repository } from 'typeorm';
 import { CreateParkingLotDto, CreateParkingLotSlotDto } from './dto/create-parking-lot.dto';
 import { ParkingLot } from '../../database/entities/parking-lot.entity';
-import { ParkingSlot } from '../../database/entities/parking-slot.entity';
+import { ParkingSlot, ParkingSlotSize } from '../../database/entities/parking-slot.entity';
 import { UpdateParkingLotDto } from './dto/update-parking-lot.dto';
+import { IFindParkingLotDetail, IQueryParkingSlotDetail } from './interfaces/find-parking-lot.interface';
 
 @Injectable()
 export class ParkingLotService {
@@ -45,8 +46,6 @@ export class ParkingLotService {
               parkingLotId: created.parkingLotId,
               slotNumber,
               size: range.size,
-              createdBy: userId,
-              updatedBy: userId,
             }),
           );
         }
@@ -101,8 +100,6 @@ export class ParkingLotService {
                 parkingLotId,
                 slotNumber,
                 size: range.size,
-                createdBy: userId,
-                updatedBy: userId,
               }),
             );
           }
@@ -139,8 +136,7 @@ export class ParkingLotService {
       const parkingLotRepo = trx.getRepository(ParkingLot);
       const parkingSlotRepo = trx.getRepository(ParkingSlot);
 
-      await parkingSlotRepo.update({ parkingLotId }, { updatedBy: userId, deletedBy: userId });
-      await parkingSlotRepo.softDelete({ parkingLotId });
+      await parkingSlotRepo.delete({ parkingLotId });
 
       await parkingLotRepo.save({ ...parkingLot, updatedBy: userId, deletedBy: userId });
       await parkingLotRepo.softDelete({ parkingLotId });
@@ -173,5 +169,65 @@ export class ParkingLotService {
         );
       }
     }
+  }
+
+  async findOneById(parkingLotId: string): Promise<IFindParkingLotDetail> {
+    const parkingLotDetail = await this.parkingLotRepo
+      .createQueryBuilder('pl')
+      .select('pl.parking_lot_name', 'parkingLotName')
+      .addSelect('pl.total_slots', 'totalSlots')
+      .addSelect(
+        `
+          COUNT(
+            CASE 
+              WHEN ps.is_available = true AND ps.size = '${ParkingSlotSize.SMALL}'
+              THEN ps.parking_slot_id 
+            END
+          )::INT
+        `,
+        'availableSmallSlots',
+      )
+      .addSelect(
+        `
+          COUNT(
+            CASE 
+              WHEN ps.is_available = true AND ps.size = '${ParkingSlotSize.MEDIUM}'
+              THEN ps.parking_slot_id 
+            END
+          )::INT
+        `,
+        'availableMediumSlots',
+      )
+      .addSelect(
+        `
+          COUNT(
+            CASE 
+              WHEN ps.is_available = true AND ps.size = '${ParkingSlotSize.LARGE}'
+              THEN ps.parking_slot_id 
+            END
+          )::INT
+        `,
+        'availableLargeSlots',
+      )
+      .leftJoin(ParkingSlot, 'ps', 'ps.parking_lot_id = pl.parking_lot_id')
+      .where('pl.parking_lot_id = :parkingLotId', { parkingLotId })
+      .groupBy('pl.parking_lot_id')
+      .addGroupBy('pl.parking_lot_name')
+      .addGroupBy('pl.total_slots')
+      .getRawOne<IQueryParkingSlotDetail>();
+
+    if (!parkingLotDetail) {
+      throw new NotFoundException(`Parking lot id ${parkingLotId} not found.`);
+    }
+
+    return {
+      parkingLotName: parkingLotDetail.parkingLotName,
+      totalSlots: parkingLotDetail.totalSlots,
+      totalAvailableSlots: {
+        small: parkingLotDetail.availableSmallSlots,
+        medium: parkingLotDetail.availableMediumSlots,
+        large: parkingLotDetail.availableLargeSlots,
+      },
+    };
   }
 }

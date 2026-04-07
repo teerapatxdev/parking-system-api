@@ -26,6 +26,11 @@ export class UserController {
     return await this.userService.findOneById(param.userId);
   }
 
+  @Get('find-list')
+  async findList(@CurrentUser() user: AuthenticatedUser): Promise<User[]> {
+    return await this.userService.findList(user.role);
+  }
+
   @Patch('update/:userId')
   async update(
     @Param() param: FindUserByIdDto,

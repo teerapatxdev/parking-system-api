@@ -15,6 +15,7 @@ import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { ParkingLotModule } from './modules/parking-lot/parking-lot.module';
 import { TerminusModule } from '@nestjs/terminus';
 import { UserModule } from './modules/user/user.module';
+import { TicketModule } from './modules/ticket/ticket.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { UserModule } from './modules/user/user.module';
     AuthModule,
     ParkingLotModule,
     UserModule,
+    TicketModule,
   ],
   controllers: [AppController],
   providers: [

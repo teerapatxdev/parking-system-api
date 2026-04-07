@@ -1,7 +1,7 @@
 import { SetMetadata } from '@nestjs/common';
-import { UserRole } from '../../database/entities/user.entity';
+import { EUserRole } from '../../database/entities/user.entity';
 
 export const ROLES_KEY = 'roles';
-export const Roles = (...roles: UserRole[]) => SetMetadata(ROLES_KEY, roles);
+export const Roles = (...roles: EUserRole[]) => SetMetadata(ROLES_KEY, roles);
 
-export const SuperOnly = () => Roles(UserRole.SUPER);
+export const SuperOnly = () => Roles(EUserRole.SUPER);

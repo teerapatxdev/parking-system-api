@@ -1,7 +1,7 @@
 import { Exclude } from 'class-transformer';
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
-export enum UserRole {
+export enum EUserRole {
   SUPER = 'SUPER',
   ADMIN = 'ADMIN',
 }
@@ -24,8 +24,8 @@ export class User {
   @Column({ name: 'phone_number', type: 'varchar', length: 20, nullable: true })
   phoneNumber: string | null;
 
-  @Column({ name: 'user_role', type: 'enum', enum: UserRole, enumName: 'e_user_role', default: UserRole.ADMIN })
-  userRole: UserRole;
+  @Column({ name: 'user_role', type: 'enum', enum: EUserRole, enumName: 'e_user_role', default: EUserRole.ADMIN })
+  userRole: EUserRole;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

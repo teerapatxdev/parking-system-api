@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
-import { UserRole } from '../../../database/entities/user.entity';
+import { EUserRole } from '../../../database/entities/user.entity';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'Test User', maxLength: 100 })
@@ -28,8 +28,8 @@ export class CreateUserDto {
   @MaxLength(20)
   phoneNumber?: string | null;
 
-  @ApiProperty({ enum: UserRole, default: UserRole.ADMIN, required: false })
+  @ApiProperty({ enum: EUserRole, default: EUserRole.ADMIN, required: false })
   @IsOptional()
-  @IsEnum(UserRole)
-  userRole?: UserRole;
+  @IsEnum(EUserRole)
+  userRole?: EUserRole;
 }

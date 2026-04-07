@@ -1,11 +1,11 @@
-import { type UserRole } from '../../../database/entities/user.entity';
+import { type EUserRole } from '../../../database/entities/user.entity';
 
 export interface JwtPayload {
   sub: string;
   userFullName: string;
   phoneNumber: string | null;
   email: string;
-  role: UserRole;
+  role: EUserRole;
 }
 
 export interface AuthenticatedUser {
@@ -13,5 +13,5 @@ export interface AuthenticatedUser {
   userFullName: string;
   phoneNumber: string | null;
   email: string;
-  role: UserRole;
+  role: EUserRole;
 }

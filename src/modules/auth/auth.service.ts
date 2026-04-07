@@ -20,9 +20,9 @@ export class AuthService {
 
   async login(body: LoginDto): Promise<LoginResponseDto> {
     const user = await this.userRepo
-      .createQueryBuilder('user')
-      .addSelect('user.passwordHash')
-      .where('user.email = :email', { email: body.email })
+      .createQueryBuilder('u')
+      .addSelect('u.passwordHash')
+      .where('u.email = :email', { email: body.email })
       .getOne();
 
     if (!user) {

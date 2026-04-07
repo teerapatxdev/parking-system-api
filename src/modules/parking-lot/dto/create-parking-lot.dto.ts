@@ -16,12 +16,12 @@ import { Trim } from '../../../common/decorators/trim.decorator';
 import { ParkingSlotSize } from '../../../database/entities/parking-slot.entity';
 
 export class CreateParkingLotSlotDto {
-  @ApiProperty({ example: 1, minimum: 1 })
+  @ApiProperty({ example: 1, minimum: 1, type: 'integer' })
   @IsInt()
   @Min(1)
   from: number;
 
-  @ApiProperty({ example: 20, minimum: 1 })
+  @ApiProperty({ example: 20, minimum: 1, type: 'integer' })
   @IsInt()
   @Min(1)
   to: number;
@@ -32,7 +32,7 @@ export class CreateParkingLotSlotDto {
 }
 
 export class CreateParkingLotDto {
-  @ApiProperty({ example: 'Parking A', maxLength: 100 })
+  @ApiProperty({ example: 'Parking A', maxLength: 100, type: 'string' })
   @Trim()
   @IsString()
   @IsNotEmpty()

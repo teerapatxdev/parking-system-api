@@ -1,7 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { EntityManager, Not, Repository } from 'typeorm';
-import { User, UserRole } from '../../database/entities/user.entity';
+import { User, EUserRole } from '../../database/entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
@@ -40,7 +40,7 @@ export class UserService {
   }
 
   async update(userId: string, body: UpdateUserDto, currentUser: AuthenticatedUser): Promise<User> {
-    if (currentUser.role !== UserRole.SUPER && currentUser.userId !== userId) {
+    if (currentUser.role !== EUserRole.SUPER && currentUser.userId !== userId) {
       throw new ForbiddenException('You are not allowed to update other users.');
     }
 
@@ -49,13 +49,13 @@ export class UserService {
       throw new NotFoundException(`User id ${userId} not found.`);
     }
 
-    if (body.userRole !== undefined && currentUser.role !== UserRole.SUPER) {
+    if (body.userRole !== undefined && currentUser.role !== EUserRole.SUPER) {
       throw new ForbiddenException('Only SUPER users can change user roles.');
     }
 
-    if (user.userRole === UserRole.SUPER && body.userRole !== undefined && body.userRole !== UserRole.SUPER) {
+    if (user.userRole === EUserRole.SUPER && body.userRole !== undefined && body.userRole !== EUserRole.SUPER) {
       const remainingSuperCount = await this.userRepo.count({
-        where: { userRole: UserRole.SUPER },
+        where: { userRole: EUserRole.SUPER },
       });
       if (remainingSuperCount <= 1) {
         throw new ConflictException('Cannot demote the last SUPER user.');
@@ -97,9 +97,9 @@ export class UserService {
       throw new NotFoundException(`User id ${userId} not found.`);
     }
 
-    if (user.userRole === UserRole.SUPER) {
+    if (user.userRole === EUserRole.SUPER) {
       const remainingSuperCount = await this.userRepo.count({
-        where: { userRole: UserRole.SUPER },
+        where: { userRole: EUserRole.SUPER },
       });
       if (remainingSuperCount <= 1) {
         throw new ConflictException('Cannot delete the last SUPER user.');
@@ -115,5 +115,21 @@ export class UserService {
       throw new NotFoundException(`User id ${userId} not found.`);
     }
     return user;
+  }
+
+  async findList(userRole: EUserRole): Promise<User[]> {
+    return await this.userRepo.find({
+      select: {
+        userFullName: true,
+        email: true,
+        phoneNumber: true,
+        userRole: true,
+        createdAt: true,
+        createdBy: true,
+        updatedAt: true,
+        updatedBy: true,
+      },
+      where: userRole === EUserRole.ADMIN ? { userRole: EUserRole.ADMIN } : {},
+    });
   }
 }
