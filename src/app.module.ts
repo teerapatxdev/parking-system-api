@@ -8,7 +8,13 @@ import { AppService } from './app.service';
 import { validate } from './common/config/env.validation';
 import { RequestIdMiddleware } from './common/middlewares/request-id.middleware';
 import { SecurityHeadersMiddleware } from './common/middlewares/security-headers.middleware';
-import { HealthModule } from './modules/health/health.module';
+import { DatabaseModule } from './database/database.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from './modules/auth/guards/roles.guard';
+import { ParkingLotModule } from './modules/parking-lot/parking-lot.module';
+import { TerminusModule } from '@nestjs/terminus';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -28,7 +34,11 @@ import { HealthModule } from './modules/health/health.module';
         limit: 60,
       },
     ]),
-    HealthModule,
+    TerminusModule,
+    DatabaseModule,
+    AuthModule,
+    ParkingLotModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [
@@ -36,6 +46,14 @@ import { HealthModule } from './modules/health/health.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

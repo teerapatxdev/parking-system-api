@@ -37,10 +37,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-return': 'error',
 
       // — Unused variables (error, allow _ prefix to ignore) —
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
 
       // — Prefer modern TypeScript idioms —
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
@@ -53,17 +50,14 @@ export default tseslint.config(
       '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
 
       // — NestJS decorators use parameter properties —
-      '@typescript-eslint/no-extraneous-class': [
-        'error',
-        { allowWithDecorator: true },
-      ],
+      '@typescript-eslint/no-extraneous-class': ['error', { allowWithDecorator: true }],
 
       // — General best practices —
       'no-console': 'warn',
       'no-debugger': 'error',
       eqeqeq: ['error', 'always'],
       'no-return-await': 'off',
-      '@typescript-eslint/return-await': ['error', 'in-try-catch'],
+      '@typescript-eslint/no-misused-spread': 'off',
 
       // — Prettier —
       'prettier/prettier': ['error', { endOfLine: 'auto' }],

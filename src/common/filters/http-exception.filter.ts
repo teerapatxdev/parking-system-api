@@ -16,10 +16,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       exception instanceof HttpException
         ? (exception.getResponse() as string | { message: string | string[] }).toString !== Object.prototype.toString
           ? (exception.getResponse() as string)
-          : ((exception.getResponse() as { message: string | string[] }).message ?? 'Something went wrong')
+          : (exception.getResponse() as { message: string | string[] }).message
         : 'Internal server error';
 
-    this.logger.error(`${request.method} ${request.url} ${statusCode} - ${JSON.stringify(message)}`, exception instanceof Error ? exception.stack : undefined);
+    this.logger.error(
+      `${request.method} ${request.url} ${String(statusCode)} - ${JSON.stringify(message)}`,
+      exception instanceof Error ? exception.stack : undefined,
+    );
 
     response.status(statusCode).json({
       statusCode,
