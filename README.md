@@ -23,10 +23,19 @@ The service is split into two audiences:
 
 ## Prerequisites
 
-Before running the project, please install the following on your machine:
+Choose **one** of the two paths below and install only what that path needs.
 
-- **[Docker](https://www.docker.com/products/docker-desktop/)** (with Compose v2) — required to build and run the API + database with a single command.
-- **[PostgreSQL 16](https://www.postgresql.org/download/)** — required **only** if you plan to run the app locally without Docker (see [Local Development](#local-development-without-docker)). If you use the Docker path, Postgres 16 is provided automatically by the `postgres` service in [docker-compose.yml](docker-compose.yml) and you do **not** need to install it on your host.
+### Path A — Docker (recommended)
+
+- **[Docker](https://www.docker.com/products/docker-desktop/)** (with Compose v2)
+
+That's it. Postgres 16 and Node.js are provided inside the containers — you do **not** need to install them on your host.
+
+### Path B — Local development (without Docker)
+
+- **Node.js 20+**
+- **npm 10+**
+- **[PostgreSQL 16](https://www.postgresql.org/download/)** running on your machine
 
 ---
 
@@ -74,15 +83,7 @@ docker compose down -v
 
 ## Local Development (without Docker)
 
-If you prefer to run the app directly on your machine:
-
-### Prerequisites
-
-- Node.js 20+
-- npm 10+
-- A running PostgreSQL 16 instance
-
-### Setup
+If you prefer to run the app directly on your machine (make sure you've installed everything from **Path B** in [Prerequisites](#prerequisites)):
 
 ```bash
 # 1. install dependencies
