@@ -1,8 +1,8 @@
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Reflector } from '@nestjs/core';
+import { type ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { type ConfigService } from '@nestjs/config';
+import { type Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { EntityManager, type Repository } from 'typeorm';
+import { type EntityManager, type Repository } from 'typeorm';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { EUserRole, type User } from '../../../database/entities/user.entity';
 

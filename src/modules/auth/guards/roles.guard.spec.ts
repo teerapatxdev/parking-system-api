@@ -1,5 +1,5 @@
-import { ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import { type ExecutionContext, ForbiddenException } from '@nestjs/common';
+import { type Reflector } from '@nestjs/core';
 import { RolesGuard } from './roles.guard';
 import { EUserRole } from '../../../database/entities/user.entity';
 import type { AuthenticatedUser } from '../interfaces/jwt-payload.interface';
@@ -51,9 +51,7 @@ describe('RolesGuard', () => {
   it('should throw ForbiddenException when user is missing on the request', () => {
     reflector.getAllAndOverride.mockReturnValue([EUserRole.ADMIN]);
 
-    expect(() => guard.canActivate(buildContext(undefined))).toThrow(
-      new ForbiddenException('Authentication required'),
-    );
+    expect(() => guard.canActivate(buildContext(undefined))).toThrow(new ForbiddenException('Authentication required'));
   });
 
   it('should allow when user role matches one of the required roles', () => {
