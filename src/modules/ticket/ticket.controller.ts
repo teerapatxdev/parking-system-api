@@ -10,6 +10,7 @@ import { IFindCarList } from './interfaces/find-car-list.interface';
 import { FindParkingLotByIdDto } from '../parking-lot/dto/find-parking-lot.dto';
 import { FindTicketHistoryDto } from './dto/find-ticket-history.dto';
 import { IFindTicketHistory } from './interfaces/find-ticket-history.interface';
+import { Public } from '../../common/decorators/public.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Ticket')
@@ -17,11 +18,13 @@ import { IFindTicketHistory } from './interfaces/find-ticket-history.interface';
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
 
+  @Public()
   @Post('park-car')
   async parkCar(@Body() body: CreateTicketDto): Promise<Ticket> {
     return await this.ticketService.parkCar(body);
   }
 
+  @Public()
   @Patch('leave-car')
   async leaveCar(@Body() body: UpdateTicketDto): Promise<Ticket> {
     return await this.ticketService.leaveCar(body);

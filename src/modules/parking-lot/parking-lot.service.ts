@@ -4,7 +4,16 @@ import { CreateParkingLotDto, CreateParkingLotSlotDto } from './dto/create-parki
 import { ParkingLot } from '../../database/entities/parking-lot.entity';
 import { ParkingSlot, ParkingSlotSize } from '../../database/entities/parking-slot.entity';
 import { UpdateParkingLotDto } from './dto/update-parking-lot.dto';
-import { IFindParkingLotDetail, IQueryParkingSlotDetail } from './interfaces/find-parking-lot.interface';
+import {
+  IFindParkingLotDetail,
+  IFindParkingLotListItem,
+  IQueryParkingLotListItem,
+  IQueryParkingSlotDetail,
+} from './interfaces/find-parking-lot.interface';
+import { EParkingLotListSortColumn, FindParkingLotListDto } from './dto/find-parking-lot-list.dto';
+import { PaginationResult } from '../../common/utils/pagination/dto/pagination.dto';
+import { paginateRawCustom } from '../../common/utils/pagination/pagination-raw-custom';
+import { ESort } from '../../common/utils/filter-option/default-option.dto';
 
 @Injectable()
 export class ParkingLotService {
@@ -171,42 +180,89 @@ export class ParkingLotService {
     }
   }
 
+  async findAll(filters: FindParkingLotListDto): Promise<PaginationResult<ParkingLot, IFindParkingLotListItem>> {
+    const listQb = this.parkingLotRepo
+      .createQueryBuilder('pl')
+      .select('pl.parking_lot_id', 'parkingLotId')
+      .addSelect('pl.parking_lot_name', 'parkingLotName')
+      .addSelect('pl.total_slots', 'totalSlots')
+      .addSelect('pl.created_at', 'createdAt')
+      .addSelect(
+        `COUNT(CASE WHEN ps.is_available = true AND ps.size = :smallValue THEN ps.parking_slot_id END)::INT`,
+        'availableSmallSlots',
+      )
+      .addSelect(
+        `COUNT(CASE WHEN ps.is_available = true AND ps.size = :mediumValue THEN ps.parking_slot_id END)::INT`,
+        'availableMediumSlots',
+      )
+      .addSelect(
+        `COUNT(CASE WHEN ps.is_available = true AND ps.size = :largeValue THEN ps.parking_slot_id END)::INT`,
+        'availableLargeSlots',
+      )
+      .leftJoin(ParkingSlot, 'ps', 'ps.parking_lot_id = pl.parking_lot_id')
+      .groupBy('pl.parking_lot_id')
+      .addGroupBy('pl.parking_lot_name')
+      .addGroupBy('pl.total_slots')
+      .addGroupBy('pl.created_at')
+      .setParameters({
+        smallValue: ParkingSlotSize.SMALL,
+        mediumValue: ParkingSlotSize.MEDIUM,
+        largeValue: ParkingSlotSize.LARGE,
+      });
+
+    if (filters.parkingLotName) {
+      listQb.where('pl.parking_lot_name ILIKE :parkingLotName', {
+        parkingLotName: `%${filters.parkingLotName}%`,
+      });
+    }
+
+    const SORT_MAP: Record<EParkingLotListSortColumn, string> = {
+      [EParkingLotListSortColumn.PARKING_LOT_NAME]: 'pl.parking_lot_name',
+      [EParkingLotListSortColumn.TOTAL_SLOTS]: 'pl.total_slots',
+      [EParkingLotListSortColumn.CREATED_AT]: 'pl.created_at',
+    };
+
+    if (filters.sortBy && filters.sortBy in SORT_MAP) {
+      listQb.orderBy(SORT_MAP[filters.sortBy], filters.order ?? ESort.ASC);
+    } else {
+      listQb.orderBy('pl.created_at', ESort.DESC);
+    }
+
+    return await paginateRawCustom<ParkingLot, IFindParkingLotListItem>(
+      listQb,
+      {
+        page: filters.page ?? 1,
+        limit: filters.limit ?? 10,
+      },
+      (rows) =>
+        (rows as unknown as IQueryParkingLotListItem[]).map((row) => ({
+          parkingLotId: row.parkingLotId,
+          parkingLotName: row.parkingLotName,
+          totalSlots: row.totalSlots,
+          totalAvailableSlots: {
+            small: row.availableSmallSlots,
+            medium: row.availableMediumSlots,
+            large: row.availableLargeSlots,
+          },
+        })),
+    );
+  }
+
   async findOneById(parkingLotId: string): Promise<IFindParkingLotDetail> {
     const parkingLotDetail = await this.parkingLotRepo
       .createQueryBuilder('pl')
       .select('pl.parking_lot_name', 'parkingLotName')
       .addSelect('pl.total_slots', 'totalSlots')
       .addSelect(
-        `
-          COUNT(
-            CASE 
-              WHEN ps.is_available = true AND ps.size = '${ParkingSlotSize.SMALL}'
-              THEN ps.parking_slot_id 
-            END
-          )::INT
-        `,
+        `COUNT(CASE WHEN ps.is_available = true AND ps.size = :smallValue THEN ps.parking_slot_id END)::INT`,
         'availableSmallSlots',
       )
       .addSelect(
-        `
-          COUNT(
-            CASE 
-              WHEN ps.is_available = true AND ps.size = '${ParkingSlotSize.MEDIUM}'
-              THEN ps.parking_slot_id 
-            END
-          )::INT
-        `,
+        `COUNT(CASE WHEN ps.is_available = true AND ps.size = :mediumValue THEN ps.parking_slot_id END)::INT`,
         'availableMediumSlots',
       )
       .addSelect(
-        `
-          COUNT(
-            CASE 
-              WHEN ps.is_available = true AND ps.size = '${ParkingSlotSize.LARGE}'
-              THEN ps.parking_slot_id 
-            END
-          )::INT
-        `,
+        `COUNT(CASE WHEN ps.is_available = true AND ps.size = :largeValue THEN ps.parking_slot_id END)::INT`,
         'availableLargeSlots',
       )
       .leftJoin(ParkingSlot, 'ps', 'ps.parking_lot_id = pl.parking_lot_id')
@@ -214,6 +270,11 @@ export class ParkingLotService {
       .groupBy('pl.parking_lot_id')
       .addGroupBy('pl.parking_lot_name')
       .addGroupBy('pl.total_slots')
+      .setParameters({
+        smallValue: ParkingSlotSize.SMALL,
+        mediumValue: ParkingSlotSize.MEDIUM,
+        largeValue: ParkingSlotSize.LARGE,
+      })
       .getRawOne<IQueryParkingSlotDetail>();
 
     if (!parkingLotDetail) {

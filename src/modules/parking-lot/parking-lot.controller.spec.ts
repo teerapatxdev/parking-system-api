@@ -15,6 +15,7 @@ describe('ParkingLotController', () => {
   const updateMock = jest.fn();
   const deleteMock = jest.fn();
   const findOneByIdMock = jest.fn();
+  const findAllMock = jest.fn();
 
   const mockUser: AuthenticatedUser = {
     userId: 'user-id-1',
@@ -35,6 +36,7 @@ describe('ParkingLotController', () => {
     updateMock.mockReset();
     deleteMock.mockReset();
     findOneByIdMock.mockReset();
+    findAllMock.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ParkingLotController],
@@ -46,6 +48,7 @@ describe('ParkingLotController', () => {
             update: updateMock,
             delete: deleteMock,
             findOneById: findOneByIdMock,
+            findAll: findAllMock,
           },
         },
       ],
@@ -93,6 +96,29 @@ describe('ParkingLotController', () => {
 
       expect(deleteMock).toHaveBeenCalledWith('parking-lot-id-1', mockUser.userId);
       expect(result).toEqual(mockParkingLot);
+    });
+  });
+
+  describe('findList', () => {
+    it('should call parkingLotService.findAll with the provided filters', async () => {
+      const paginated = {
+        items: [
+          {
+            parkingLotId: 'parking-lot-id-1',
+            parkingLotName: 'Parking A',
+            totalSlots: 10,
+            totalAvailableSlots: { small: 3, medium: 4, large: 2 },
+          },
+        ],
+        meta: { totalItems: 1, itemCount: 1, itemsPerPage: 10, totalPages: 1, currentPage: 1 },
+      };
+      findAllMock.mockResolvedValue(paginated);
+
+      const filters = { parkingLotName: 'Park', page: 1, limit: 10 };
+      const result = await controller.findList(filters);
+
+      expect(findAllMock).toHaveBeenCalledWith(filters);
+      expect(result).toEqual(paginated);
     });
   });
 

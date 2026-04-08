@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: parking-system-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: parking-system-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - parking-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d parking-system-db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: parking-system-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parking-system-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MODE: DEV
+      PORT: 3000
+      CLIENT_ORIGIN: http://localhost:3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: parking-system-db
+      JWT_SECRET: parking-system-api-secret
+      JWT_EXPIRES_IN: 1d
+    ports:
+      - "3000:3000"
+
+volumes:
+  parking-db-data:

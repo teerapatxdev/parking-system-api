@@ -1,11 +1,14 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
-import { EntityManager, Not, type Repository } from 'typeorm';
+import { EntityManager, Not, type Repository, type SelectQueryBuilder } from 'typeorm';
 import { ParkingLotService } from './parking-lot.service';
 import { ParkingLot } from '../../database/entities/parking-lot.entity';
 import { ParkingSlot, ParkingSlotSize } from '../../database/entities/parking-slot.entity';
 import type { CreateParkingLotDto } from './dto/create-parking-lot.dto';
 import type { UpdateParkingLotDto } from './dto/update-parking-lot.dto';
+import { EParkingLotListSortColumn } from './dto/find-parking-lot-list.dto';
+import { ESort } from '../../common/utils/filter-option/default-option.dto';
+import * as paginationModule from '../../common/utils/pagination/pagination-raw-custom';
 
 describe('ParkingLotService', () => {
   let service: ParkingLotService;
@@ -269,6 +272,83 @@ describe('ParkingLotService', () => {
       );
       expect(parkingLotRepo.softDelete).toHaveBeenCalledWith({ parkingLotId });
       expect(result).toEqual(existing);
+    });
+  });
+
+  describe('findAll', () => {
+    const buildListQb = () => ({
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      leftJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      addGroupBy: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should apply default ordering by created_at DESC and map raw rows', async () => {
+      const qb = buildListQb();
+      parkingLotRepo.createQueryBuilder.mockReturnValue(qb as unknown as SelectQueryBuilder<ParkingLot>);
+
+      const rawRow = {
+        parkingLotId: 'lot-1',
+        parkingLotName: 'Parking A',
+        totalSlots: 10,
+        availableSmallSlots: 3,
+        availableMediumSlots: 4,
+        availableLargeSlots: 2,
+      };
+      const paginateSpy = jest
+        .spyOn(paginationModule, 'paginateRawCustom')
+        .mockImplementation((_qb, _opts, mapFunc) => {
+          const items = mapFunc ? mapFunc([rawRow] as never) : ([rawRow] as never);
+          return Promise.resolve({
+            items,
+            meta: { totalItems: 1, itemCount: 1, itemsPerPage: 10, totalPages: 1, currentPage: 1 },
+          } as never);
+        });
+
+      const result = await service.findAll({});
+
+      expect(qb.where).not.toHaveBeenCalled();
+      expect(qb.andWhere).not.toHaveBeenCalled();
+      expect(qb.orderBy).toHaveBeenCalledWith('pl.created_at', ESort.DESC);
+      expect(paginateSpy).toHaveBeenCalledWith(qb, { page: 1, limit: 10 }, expect.any(Function));
+      expect(result.items).toEqual([
+        {
+          parkingLotId: 'lot-1',
+          parkingLotName: 'Parking A',
+          totalSlots: 10,
+          totalAvailableSlots: { small: 3, medium: 4, large: 2 },
+        },
+      ]);
+    });
+
+    it('should apply name filter and custom sort', async () => {
+      const qb = buildListQb();
+      parkingLotRepo.createQueryBuilder.mockReturnValue(qb as unknown as SelectQueryBuilder<ParkingLot>);
+      jest.spyOn(paginationModule, 'paginateRawCustom').mockResolvedValue({
+        items: [],
+        meta: { totalItems: 0, itemCount: 0, itemsPerPage: 5, totalPages: 0, currentPage: 2 },
+      } as never);
+
+      await service.findAll({
+        parkingLotName: 'Park',
+        sortBy: EParkingLotListSortColumn.PARKING_LOT_NAME,
+        order: ESort.ASC,
+        page: 2,
+        limit: 5,
+      });
+
+      expect(qb.where).toHaveBeenCalledWith('pl.parking_lot_name ILIKE :parkingLotName', {
+        parkingLotName: '%Park%',
+      });
+      expect(qb.orderBy).toHaveBeenCalledWith('pl.parking_lot_name', ESort.ASC);
     });
   });
 
